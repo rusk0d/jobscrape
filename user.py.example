@@ -1,0 +1,41 @@
+"""
+User setup script for jobscrape.
+
+INSTRUCTIONS:
+1. Copy this file to user.py (NOT tracked in git)
+2. Fill in your user details below
+3. Create or update profile.txt with your CV/profile text
+4. Run: python user.py
+"""
+import boto3
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+with open("profile.txt") as f:
+    profile = f.read()
+
+table = boto3.resource("dynamodb", region_name=os.environ.get("AWS_REGION", "eu-central-1")).Table(
+    os.environ.get("USERS_TABLE", "users")
+)
+
+user = {
+    "user_id": "your-uuid-here",  # Generate a UUID or use an existing one
+    "email": "your-email@example.com",
+    "profile": profile,
+    "searches": [
+        "https://www.profession.hu/allasok/budapest/1,0,23,cloud%401%401?keywordsearch&rss",
+        "https://www.profession.hu/allasok/budapest/1,0,23,devops%401%401?keywordsearch&rss",
+        "https://www.profession.hu/allasok/budapest/1,0,23,sysadmin%401%401?keywordsearch&rss",
+        "https://www.profession.hu/allasok/budapest/1,0,23,terraform%401%401?keywordsearch&rss",
+        "https://www.profession.hu/allasok/budapest/1,0,23,aws%401%401?keywordsearch&rss",
+        "https://www.profession.hu/allasok/budapest/1,0,23,rendszergazda%401%401?keywordsearch&rss",
+    ],
+    "include": ["cloud", "aws", "sysadmin", "system administrator", "devops", "terraform", "rendszergazda", "rendszeruzemelte", "alkalmazas tamogat", "it administrator", "it support"],
+    "exclude": ["Sales & Guest Relations Representative", "Breakfast", "german", "német", "deutsch", "francia", "french", "pénztáros", "recepciós"],
+    "alert": 75
+}
+
+table.put_item(Item=user)
+print(f"User {user['email']} created/updated")

@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.env
+.env.local
+.env.*.local
+venv/
+*:Zone.Identifier
+build/
+function.zip
+.vscode/
+.idea/
+*.save
+*.bak
+profile.txt
+aldi_ids.txt
+user.py
