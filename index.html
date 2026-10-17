@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>AIF-C01 // Study Hub</title>
+<style>
+  :root{
+    --bg:#0A0E13;
+    --surface:#121820;
+    --surface-2:#1A2230;
+    --surface-3:#222C3D;
+    --border:#26303F;
+    --text:#E7ECF2;
+    --text-dim:#8C98AA;
+    --text-faint:#5B6779;
+    --accent:#4FD8C4;
+    --accent-dim:#2A5C55;
+    --amber:#F2A65A;
+    --amber-dim:#4A3A24;
+    --danger:#E2685B;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --radius: 10px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--text); font-family:var(--sans);}
+  body{
+    padding-bottom:64px;
+    min-height:100vh;
+  }
+  ::selection{ background: var(--accent-dim); color: var(--text); }
+
+  /* ---------- Header ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:20;
+    background: rgba(10,14,19,0.92);
+    backdrop-filter: blur(8px);
+    border-bottom:1px solid var(--border);
+    padding: 14px 16px 12px;
+  }
+  .brand{ display:flex; align-items:baseline; gap:8px; }
+  .brand .prompt{ font-family:var(--mono); color:var(--accent); font-size:15px; }
+  .brand h1{ font-family:var(--mono); font-size:16px; font-weight:600; margin:0; letter-spacing:0.02em; color:var(--text); }
+  .brand .cursor{
+    width:8px; height:15px; background:var(--accent); display:inline-block; margin-left:2px;
+    animation: blink 1.1s steps(1) infinite;
+  }
+  @keyframes blink{ 50%{ opacity:0; } }
+  .subtitle{ font-family:var(--mono); font-size:11px; color:var(--text-faint); margin:2px 0 12px; }
+
+  .search-row{ display:flex; gap:8px; }
+  .search-wrap{ position:relative; flex:1; }
+  .search-wrap input{
+    width:100%; background:var(--surface); border:1px solid var(--border); color:var(--text);
+    padding:10px 12px 10px 32px; border-radius:var(--radius); font-size:15px; font-family:var(--sans);
+  }
+  .search-wrap input:focus{ outline:none; border-color:var(--accent); }
+  .search-wrap .icon{ position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--text-faint); font-size:14px; }
+  .clear-btn{
+    background:var(--surface); border:1px solid var(--border); color:var(--text-dim);
+    border-radius:var(--radius); padding:0 14px; font-size:13px; font-family:var(--mono);
+  }
+
+  .overall-wrap{ display:flex; align-items:center; gap:10px; margin-top:12px; }
+  .overall-track{ flex:1; height:6px; background:var(--surface-2); border-radius:4px; overflow:hidden; }
+  .overall-fill{ height:100%; background:linear-gradient(90deg, var(--accent-dim), var(--accent)); border-radius:4px; transition: width .4s ease; }
+  .overall-label{ font-family:var(--mono); font-size:11px; color:var(--accent); min-width:64px; text-align:right; }
+
+  /* ---------- Layout ---------- */
+  .wrap{ padding: 16px 14px 0; max-width:720px; margin:0 auto; }
+  .section-label{
+    font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:0.12em;
+    color:var(--text-faint); margin: 22px 4px 10px;
+  }
+
+  /* ---------- Overview stat cards ---------- */
+  .stat-grid{ display:grid; grid-template-columns: repeat(2,1fr); gap:8px; margin-bottom:6px; }
+  .stat-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:10px 12px; }
+  .stat-card .k{ font-family:var(--mono); font-size:19px; color:var(--accent); font-weight:600; }
+  .stat-card .v{ font-size:11.5px; color:var(--text-dim); margin-top:2px; }
+
+  .weight-bars{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px; }
+  .weight-row{ margin-bottom:12px; cursor:pointer; }
+  .weight-row:last-child{ margin-bottom:0; }
+  .weight-row-top{ display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px; }
+  .weight-row-top .name{ color:var(--text); }
+  .weight-row-top .pct{ font-family:var(--mono); color:var(--text-dim); }
+  .weight-track{ height:8px; background:var(--surface-2); border-radius:4px; overflow:hidden; }
+  .weight-fill{ height:100%; border-radius:4px; background: var(--accent); opacity:0.85; }
+
+  /* ---------- Domain cards ---------- */
+  .domain{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    margin-bottom:10px; overflow:hidden;
+  }
+  .domain-head{
+    display:flex; align-items:center; gap:12px; padding:14px; cursor:pointer; user-select:none;
+  }
+  .domain-num{
+    font-family:var(--mono); font-size:12px; color:var(--bg); background:var(--accent);
+    width:26px; height:26px; border-radius:6px; display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; font-weight:700;
+  }
+  .domain-titles{ flex:1; min-width:0; }
+  .domain-titles .t{ font-size:14.5px; font-weight:600; color:var(--text); }
+  .domain-titles .w{ font-family:var(--mono); font-size:11px; color:var(--text-faint); margin-top:2px; }
+  .domain-ring{ position:relative; width:34px; height:34px; flex-shrink:0; }
+  .domain-ring svg{ width:34px; height:34px; transform:rotate(-90deg); }
+  .domain-ring circle{ fill:none; stroke-width:3; }
+  .domain-ring .bg{ stroke:var(--surface-3); }
+  .domain-ring .fg{ stroke:var(--accent); stroke-linecap:round; transition:stroke-dashoffset .4s ease; }
+  .domain-ring .pct{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:9px; color:var(--text-dim);
+  }
+  .chevron{ color:var(--text-faint); font-size:12px; transition:transform .2s ease; flex-shrink:0; }
+  .domain.open .chevron{ transform:rotate(180deg); }
+
+  .domain-body{ display:none; border-top:1px solid var(--border); padding: 4px 14px 14px; }
+  .domain.open .domain-body{ display:block; }
+
+  .task{ margin-top:16px; }
+  .task-head{ font-family:var(--mono); font-size:12px; color:var(--accent); background:var(--accent-dim);
+    display:inline-block; padding:4px 9px; border-radius:6px; margin-bottom:10px; }
+
+  .item{ display:flex; gap:10px; padding:8px 4px; border-bottom:1px dashed var(--border); }
+  .item:last-child{ border-bottom:none; }
+  .item .box{
+    width:18px; height:18px; border-radius:5px; border:1.5px solid var(--text-faint);
+    flex-shrink:0; margin-top:2px; display:flex; align-items:center; justify-content:center;
+    font-size:11px; color:var(--bg); transition: all .15s ease;
+  }
+  .item.checked .box{ background:var(--accent); border-color:var(--accent); }
+  .item .txt{ font-size:14px; line-height:1.5; color:var(--text); }
+  .item.checked .txt{ color:var(--text-faint); text-decoration: line-through; text-decoration-color:var(--text-faint); }
+  .item .txt strong{ color:var(--accent); font-weight:600; }
+  .item.checked .txt strong{ color:var(--text-faint); }
+  .item.hidden{ display:none; }
+  mark{ background:var(--amber); color:#1a1200; border-radius:2px; padding:0 1px; }
+
+  .tip{
+    background:var(--amber-dim); border-left:3px solid var(--amber); border-radius:6px;
+    padding:10px 12px; font-size:13px; line-height:1.5; color:#EBD3B0; margin:10px 0;
+  }
+  .tip b{ color:var(--amber); }
+
+  .svc-card{
+    background:var(--surface-2); border:1px solid var(--border); border-radius:8px;
+    padding:9px 11px; margin-bottom:6px;
+  }
+  .svc-card .name{ font-family:var(--mono); font-size:12.5px; color:var(--accent); font-weight:600; }
+  .svc-card .desc{ font-size:13px; color:var(--text-dim); margin-top:3px; line-height:1.4; }
+
+  /* ---------- chips (in-scope services) ---------- */
+  .chip-cat{ margin-bottom:14px; }
+  .chip-cat .cat-name{ font-size:12.5px; color:var(--text-dim); margin-bottom:6px; font-weight:600; }
+  .chips{ display:flex; flex-wrap:wrap; gap:6px; }
+  .chip{
+    font-family:var(--mono); font-size:11.5px; color:var(--text-dim); background:var(--surface-2);
+    border:1px solid var(--border); padding:5px 9px; border-radius:20px;
+  }
+  .chip.hidden{ display:none; }
+
+  /* ---------- recall / cram mode ---------- */
+  .recall-toggle{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    background:var(--surface); border:1px solid var(--accent-dim); color:var(--accent);
+    font-family:var(--mono); font-size:13px; padding:12px; border-radius:var(--radius);
+    margin: 6px 0 4px; cursor:pointer;
+  }
+  .recall-body{ display:none; margin-top:10px; }
+  .recall-body.open{ display:block; }
+  .ladder{ font-size:13.5px; line-height:1.7; color:var(--text); background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px; margin-bottom:10px; }
+  .ladder b{ color:var(--accent); }
+  .ladder .arrow{ color:var(--text-faint); }
+
+  .no-results{ text-align:center; color:var(--text-faint); font-family:var(--mono); font-size:13px; padding:30px 10px; }
+
+  .footer-note{ text-align:center; font-family:var(--mono); font-size:10.5px; color:var(--text-faint); padding:28px 20px 10px; line-height:1.6; }
+
+  @media (min-width: 760px){
+    .wrap{ padding-left:0; padding-right:0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap" style="padding-top:0;">
+    <div class="brand">
+      <span class="prompt">&gt;</span>
+      <h1 id="examTitle">AIF-C01 STUDY HUB</h1>
+      <span class="cursor"></span>
+    </div>
+    <div class="subtitle" id="examSubtitle">AWS Certified AI Practitioner — field reference</div>
+    <div class="search-row">
+      <div class="search-wrap">
+        <span class="icon">⌕</span>
+        <input id="searchInput" type="text" placeholder="Search topics, services, terms…" autocomplete="off">
+      </div>
+      <button class="clear-btn" id="clearBtn">Clear</button>
+    </div>
+    <div class="overall-wrap">
+      <div class="overall-track"><div class="overall-fill" id="overallFill" style="width:0%"></div></div>
+      <div class="overall-label" id="overallLabel">0% reviewed</div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="section-label">Exam overview</div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="k">65</div><div class="v">questions (50 scored + 15 unscored)</div></div>
+    <div class="stat-card"><div class="k">130min</div><div class="v">time limit, no guess penalty</div></div>
+    <div class="stat-card"><div class="k">700/1000</div><div class="v">passing scaled score</div></div>
+    <div class="stat-card"><div class="k">~6mo</div><div class="v">target candidate AI/ML exposure</div></div>
+  </div>
+
+  <div class="weight-bars" id="weightBars"></div>
+
+  <div class="section-label">Domains — tap to expand</div>
+  <div id="domainsRoot"></div>
+
+  <div class="section-label">In-scope AWS services</div>
+  <div id="servicesRoot"></div>
+
+  <div class="section-label">Cram mode</div>
+  <div class="recall-toggle" id="recallToggle">▾ Show last-minute recall sheet</div>
+  <div class="recall-body" id="recallBody"></div>
+
+  <div class="footer-note">Progress is saved on this device only.<br>Built for David's cert run — same layout can be reused for the next exam.</div>
+</div>
+
+<script>
+const DATA = {
+  examId: "aif-c01",
+  weights: [
+    { name: "1 — Fundamentals of AI and ML", pct: 20 },
+    { name: "2 — Fundamentals of Generative AI", pct: 24 },
+    { name: "3 — Applications of Foundation Models", pct: 28 },
+    { name: "4 — Guidelines for Responsible AI", pct: 14 },
+    { name: "5 — Security, Compliance & Governance", pct: 14 },
+  ],
+  domains: [
+    {
+      num: 1, title: "Fundamentals of AI and ML", weight: "20%",
+      tasks: [
+        { head: "1.1 Basic AI/ML concepts", items: [
+          {b:"**AI** — techniques that let machines mimic human intelligence/behavior."},
+          {b:"**ML** — subset of AI; learns patterns from data instead of hard-coded rules."},
+          {b:"**Deep learning** — ML using multi-layer neural networks for complex patterns."},
+          {b:"**GenAI** — subset of deep learning that creates new content, not just predictions."},
+          {b:"**LLM** — transformer-based model trained on massive text corpora."},
+          {b:"**Agentic AI** — an LLM plans, calls tools, and takes multi-step autonomous action."},
+          {b:"**Computer vision** — extracting meaning from images/video."},
+          {b:"**NLP** — understanding/generating human language."},
+          {b:"**Training** vs **inferencing** — fitting parameters to data vs. using the trained model on new inputs."},
+          {b:"**Bias** — systematic error skewing outputs; **fairness** — outputs treat groups equitably."},
+          {b:"**Underfitting** (too simple, poor everywhere) vs **overfitting** (memorizes training data, fails to generalize)."},
+          {tip:"Inferencing types: <b>Real-time</b> (sync, low latency) · <b>Batch</b> (scheduled, large volume) · <b>Asynchronous</b> (submit now, result later) · <b>Serverless</b> (auto-scales, pay-per-use)."},
+          {b:"**Labeled vs unlabeled** data — labeled has the answer attached (needed for supervised learning)."},
+          {b:"**Structured vs unstructured** — tabular/relational vs. free-form text/image/audio/video."},
+          {b:"**Supervised learning** — labeled pairs; regression & classification."},
+          {b:"**Unsupervised learning** — finds structure in unlabeled data; clustering, dimensionality reduction."},
+          {b:"**Reinforcement learning (RL)** — agent learns via reward/penalty in an environment; basis of RLHF."},
+          {tip:"See 'reward, agent, environment, policy' → reinforcement learning. See 'no labels, find groups' → unsupervised/clustering."},
+        ]},
+        { head: "1.2 Practical use cases", items: [
+          {b:"AI adds value: assisting decisions, scaling beyond manual effort, automating repetitive pattern-based tasks."},
+          {b:"AI is the wrong tool when you need a **guaranteed deterministic outcome** (use rules/code), when cost outweighs benefit, or data is insufficient."},
+          {b:"**Regression** = predict a number. **Classification** = predict a category. **Clustering** = group unlabeled items."},
+          {b:"Real-world domains: computer vision, NLP, speech recognition, recommendations, fraud detection, forecasting, knowledge search, agentic AI."},
+          {svc:[["Amazon SageMaker AI","Build, train, deploy custom ML models end-to-end."],
+                ["Amazon Transcribe","Speech-to-text."],
+                ["Amazon Translate","Neural machine translation."],
+                ["Amazon Comprehend","NLP: sentiment, entities, key phrases, PII."],
+                ["Amazon Lex","Conversational chatbots (voice + text)."],
+                ["Amazon Polly","Text-to-speech."]]},
+          {b:"Pick a **traditional/custom model** for strict explainability, narrow tasks, tight regulation. Pick a **foundation model** for broad tasks, speed, and built-in world knowledge."},
+        ]},
+        { head: "1.3 AI/ML development lifecycle", items: [
+          {b:"Pipeline: business goal → **data collection/processing** → **model selection/training** → **evaluation** → **deployment** → **monitoring** → feedback loop."},
+          {b:"**Pre-trained FM** (fast, cheap) vs. **training from scratch** (most control, most expensive/slow)."},
+          {b:"Production paths: **managed API** (e.g., Bedrock, no infra) vs. **self-hosted** (e.g., SageMaker endpoint, more control)."},
+          {svc:[["Amazon Bedrock","Access/build with FMs via API, serverless."],
+                ["Amazon SageMaker AI","Full custom build/train/deploy/MLOps toolchain."],
+                ["Amazon Q","GenAI assistant for business/dev productivity."],
+                ["Amazon Quick","BI/analytics tooling."],
+                ["Kiro","Agentic, spec-driven IDE."]]},
+          {b:"MLOps: experimentation, repeatability, scalability, managing technical debt, production readiness, monitoring & retraining."},
+          {tip:"A model can score well technically (accuracy, F1) yet fail the business (bad ROI, high cost per user). Know the difference between <b>model metrics</b> and <b>business metrics</b>."},
+        ]},
+      ]
+    },
+    {
+      num: 2, title: "Fundamentals of Generative AI", weight: "24%",
+      tasks: [
+        { head: "2.1 Basic GenAI concepts", items: [
+          {b:"**Token** — basic text chunk models process; pricing & context limits are measured in tokens."},
+          {b:"**Chunking** — splitting long documents so they fit context windows and retrieve well."},
+          {b:"**Embeddings** — numeric vectors capturing meaning; similar meaning → vectors close together."},
+          {b:"**Vector database** — storage optimized for similarity search over embeddings (RAG foundation)."},
+          {b:"**Prompt engineering** — designing inputs to steer output without changing model weights."},
+          {b:"**Transformer** — self-attention architecture underlying modern LLMs."},
+          {b:"**Foundation model (FM)** — large pre-trained model adaptable to many tasks."},
+          {b:"**Multi-modal model** — accepts/produces more than one data type."},
+          {b:"**Diffusion model** — generates images by iteratively removing noise, guided by a prompt."},
+          {b:"Use cases: image/video/audio generation, summarization, assistants/chatbots, translation, code gen, enterprise search, recommendations."},
+          {b:"FM lifecycle: data selection → model selection → pre-training → fine-tuning → evaluation → deployment → feedback."},
+          {tip:"Bedrock and most FM APIs charge per input+output token. Longer prompts/RAG context = more cost & latency. <b>Prompt caching</b> reduces both."},
+          {b:"**Context engineering** — assembling everything the model sees at inference: instructions, retrieved docs, history, tool outputs — not just one clever prompt."},
+          {b:"**Multi-agent systems** — specialized agents collaborate (planner + researcher + coder)."},
+          {b:"**Model Context Protocol (MCP)** — open standard letting agents connect to external tools/data consistently."},
+          {b:"**Memory management** — how an agent retains context across steps/sessions (short vs long-term)."},
+          {b:"**Tool usage** — agents call external functions/APIs to take real action."},
+          {b:"**Workflow orchestration** — coordinating steps/agents/tools to complete a complex task reliably."},
+        ]},
+        { head: "2.2 Capabilities & limitations", items: [
+          {b:"Advantages: adaptability across tasks, natural conversation, generating novel content on demand."},
+          {b:"**Hallucination** — confidently generating false/fabricated info."},
+          {b:"**Interpretability** — hard to explain exactly why a given output was produced."},
+          {b:"**Nondeterminism** — same prompt can yield different outputs across runs."},
+          {b:"Model selection factors: modality, performance, capabilities, constraints, compliance, cost, latency, complexity/size."},
+          {b:"Business value metrics: cross-domain performance, ROI, efficiency gains, conversion rate, ARPU, accuracy, customer lifetime value."},
+        ]},
+        { head: "2.3 AWS infrastructure for GenAI", items: [
+          {svc:[["Amazon Bedrock","Managed access to multiple FMs via one API — the central GenAI service."],
+                ["SageMaker AI / JumpStart","Custom builds + hub of pre-trained/open FMs."],
+                ["Amazon Quick","BI/analytics with GenAI-assisted insights."],
+                ["Kiro","Agentic, spec-driven IDE."],
+                ["Strands Agents","Open-source SDK for building AI agents."],
+                ["Bedrock AgentCore","Managed runtime for deploying/operating agents (identity, memory, tools)."]]},
+          {b:"Why AWS: lower barrier to entry, cost-effectiveness/speed via managed services, built-in security/compliance/responsible-AI tooling."},
+          {tip:"<b>On-Demand</b> tokens = flexible, variable cost, shared capacity (possible throttling). <b>Provisioned Throughput</b> = dedicated capacity, predictable performance, requires commitment."},
+          {b:"Custom/fine-tuned models add training + hosting cost for domain-specific performance. Region coverage, redundancy, availability all trade off against cost/latency."},
+        ]},
+      ]
+    },
+    {
+      num: 3, title: "Applications of Foundation Models", weight: "28%",
+      tasks: [
+        { head: "3.1 FM app design considerations", items: [
+          {b:"FM selection: cost, modality, latency, multi-lingual support, size/complexity, customization options, input/output length limits, prompt-caching support."},
+          {b:"**Temperature** — low = deterministic/focused; high = creative/varied."},
+          {b:"**Top-p / Top-k** — restrict token sampling to most probable candidates."},
+          {b:"**Max tokens** — caps context size and response length; affects cost & truncation."},
+          {b:"**RAG** — retrieves relevant external/private data at query time, injects into the prompt; grounds answers, avoids retraining, keeps answers current."},
+          {b:"**Amazon Bedrock Knowledge Bases** — managed RAG (ingest → chunk → embed → retrieve → augment prompt)."},
+          {b:"Vector DB options: Amazon OpenSearch Service, Aurora (pgvector), Neptune, RDS for PostgreSQL (pgvector)."},
+          {tip:"Cost/effort ladder — cheapest→most expensive: <b>prompt engineering</b> → <b>RAG</b> → <b>fine-tuning</b> → <b>distillation</b> (cuts inference cost) → <b>pre-training from scratch</b> (most expensive)."},
+          {b:"**AI agent** — uses an FM to reason, plan, and invoke tools/APIs for multi-step autonomous tasks."},
+        ]},
+        { head: "3.2 Prompt engineering techniques", items: [
+          {b:"**Context** = background info. **Instruction** = the task. **Negative prompts** = explicitly exclude something (common in image gen)."},
+          {b:"**Zero-shot** (no examples) · **Single-shot** (one example) · **Few-shot** (multiple examples) · **Chain-of-thought** (reason step by step) · **Prompt templates** (reusable, variable placeholders)."},
+          {b:"Best practices: iterate, be specific/concise, use guardrails, structure with delimiters, set persona/rules via system prompts."},
+          {b:"Risks: **prompt exposure** (system prompt leaks), **prompt poisoning** (malicious training/retrieved data), **prompt hijacking/injection** (user input overrides intent), **jailbreaking** (bypassing safety guardrails)."},
+          {b:"**Amazon Bedrock Prompt Management** — version, test, and organize prompts as reusable trackable assets."},
+        ]},
+        { head: "3.3 Training and fine-tuning FMs", items: [
+          {b:"**Pre-training** — initial training on massive broad data. **Continuous pre-training** — further general training on new/domain data, no task labels."},
+          {b:"**Fine-tuning** — supervised training on smaller labeled task-specific data. **Instruction tuning** — teaches the model to follow instructions/format helpfully."},
+          {b:"**Transfer learning** — reuse a model trained on one task as a starting point for a related one."},
+          {b:"**Distillation** — train a smaller student model to replicate a larger teacher model, cutting inference cost."},
+          {b:"Fine-tuning data prep: curation, governance, sufficient size, accurate labeling, representativeness (avoid bias)."},
+          {b:"**RLHF** — humans rank outputs → trains a reward model → aligns the FM's behavior."},
+        ]},
+        { head: "3.4 Evaluating FM performance", items: [
+          {b:"**Human-in-the-loop evaluation** — people review/rate outputs. **Benchmark datasets** — standardized comparison sets."},
+          {b:"**Amazon Bedrock Model Evaluation** — managed automatic or human evaluation of FMs."},
+          {tip:"Metric map: Summarization → <b>ROUGE</b>. Translation → <b>BLEU</b>. Semantic/meaning match → <b>BERTScore</b>. Scaling human judgment → <b>LLM-as-a-judge</b>."},
+          {b:"Align evaluation to business goals: productivity, engagement, task performance — not just benchmark scores. For RAG/agents, evaluate end-to-end task completion."},
+          {b:"Business-alignment metrics: task completion rate, user satisfaction, cost per interaction."},
+        ]},
+      ]
+    },
+    {
+      num: 4, title: "Guidelines for Responsible AI", weight: "14%",
+      tasks: [
+        { head: "4.1 Developing responsible AI systems", items: [
+          {b:"Core dimensions: **bias & fairness**, **inclusivity**, **robustness**, **safety**, **veracity**."},
+          {b:"**Amazon Bedrock Guardrails** — configurable filters/policies blocking harmful content, PII, off-topic responses, denied topics."},
+          {b:"Responsible model selection also weighs **environmental impact/sustainability** (compute/energy footprint), not just performance/cost."},
+          {b:"Legal risks: IP infringement claims, biased-output discrimination claims, loss of customer trust, end-user harm, hallucination liability."},
+          {b:"Bias-reducing dataset traits: inclusivity, diversity, curated/vetted sources, balance across groups."},
+          {tip:"<b>High bias → underfitting</b> (too simple, poor everywhere). <b>High variance → overfitting</b> (memorizes training data). Both can disproportionately harm underrepresented groups."},
+          {svc:[["SageMaker Clarify","Detects bias in data/models; explains predictions."],
+                ["SageMaker Model Monitor","Continuously monitors deployed models for drift."],
+                ["Amazon Augmented AI (A2I)","Inserts human review into ML workflows for low-confidence predictions."]]},
+        ]},
+        { head: "4.2 Transparent and explainable models", items: [
+          {b:"**Transparent/explainable** models (e.g., decision trees, linear regression) let humans understand why an output was produced."},
+          {b:"**Black-box** models (deep nets, many FMs) are harder to interpret but often more performant."},
+          {svc:[["SageMaker Model Cards","Documents intended use, training data, performance, limitations."],
+                ["SageMaker Clarify","Explainability via feature-attribution methods."],
+                ["Bedrock Model Evaluations","Compare FM output quality for informed model choice."]]},
+          {b:"Open-source models/data usually offer more transparency into training data & architecture than closed proprietary FMs."},
+          {b:"Safety vs. transparency tradeoff: more interpretable models are sometimes less performant, and vice versa — balance against the use case's risk level."},
+          {b:"Human-centered design: build in user feedback (thumbs up/down, corrections) and clear AI decision transparency (disclosing AI-generated content, confidence, sources)."},
+        ]},
+      ]
+    },
+    {
+      num: 5, title: "Security, Compliance & Governance", weight: "14%",
+      tasks: [
+        { head: "5.1 Securing AI systems", items: [
+          {b:"**IAM** roles/policies for least-privilege access to models/data. **Encryption** at rest and in transit for training data, prompts, outputs."},
+          {svc:[["Amazon Macie","Discovers/classifies sensitive data (PII) in S3."],
+                ["AWS PrivateLink","Private connectivity to AWS services, no public internet."],
+                ["Bedrock AgentCore Identity","Manages identity/credentials for AI agents."],
+                ["Bedrock Guardrails","Also filters harmful content & blocks injection-style abuse."]]},
+          {b:"**AWS shared responsibility model** — AWS secures underlying infra; you secure data, access config, application logic."},
+          {b:"**Data lineage** — tracking data origin/transformations. **Data cataloging** — organizing dataset metadata for governance."},
+          {b:"Secure data engineering: quality assessment, privacy-enhancing technologies, access control, data integrity."},
+          {b:"Security considerations: app security, threat detection, vulnerability management, infra protection, prompt-injection defenses, data-leakage prevention, output filtering/validation, audit trails, toxicity monitoring."},
+          {b:"Hallucination mitigation: **RAG grounding** (anchor to sources), **output validation**, **confidence scoring** (flag low-confidence answers for review)."},
+        ]},
+        { head: "5.2 Governance and compliance", items: [
+          {svc:[["AWS Config","Tracks/evaluates resource configuration compliance over time."],
+                ["Amazon Inspector","Automated vulnerability/security assessment."],
+                ["AWS Audit Manager","Continuously collects evidence for audits against frameworks."],
+                ["AWS Artifact","On-demand access to AWS compliance reports/agreements."],
+                ["AWS CloudTrail","Logs API calls/user activity for auditing."],
+                ["AWS Trusted Advisor","Best-practice checks: cost, security, performance, fault tolerance."]]},
+          {b:"Data governance: full lifecycle management, logging, data residency, ongoing monitoring, retention policies."},
+          {b:"**Generative AI Security Scoping Matrix** — AWS framework classifying a GenAI use case (consumer app, enterprise app, pre-trained/fine-tuned/self-trained model) to determine the right controls."},
+          {b:"Governance process: written policies, review cadence/strategy, transparency standards, team training requirements."},
+        ]},
+      ]
+    },
+  ],
+  services: [
+    { cat: "Machine Learning", items: ["Amazon Bedrock","Bedrock AgentCore","SageMaker AI","SageMaker JumpStart","Amazon Comprehend","Amazon Lex","Amazon Polly","Amazon Rekognition","Amazon Textract","Amazon Transcribe","Amazon Translate","Amazon Kendra","Amazon Personalize","Amazon Nova","Amazon A2I","AWS Transform"] },
+    { cat: "Developer Tools", items: ["Kiro","Strands Agents","Amazon Q"] },
+    { cat: "Analytics", items: ["AWS Data Exchange","Amazon EMR","AWS Glue","Glue DataBrew","Lake Formation","OpenSearch Service","Amazon Quick","Amazon Redshift"] },
+    { cat: "Database", items: ["Aurora","DocumentDB","DynamoDB","ElastiCache","Neptune","RDS"] },
+    { cat: "Security, Identity & Compliance", items: ["IAM","KMS","Secrets Manager","Macie","Inspector","Audit Manager","Artifact"] },
+    { cat: "Management & Governance", items: ["CloudTrail","CloudWatch","Config","Trusted Advisor","Well-Architected Tool"] },
+    { cat: "Compute / Containers", items: ["EC2","Lambda","ECS","EKS"] },
+    { cat: "Networking & Storage", items: ["VPC","CloudFront","S3","S3 Glacier"] },
+    { cat: "Cloud Financial Mgmt", items: ["Budgets","Cost Explorer"] },
+  ],
+  recall: [
+    { label: "FM customization", chain: ["prompt engineering","RAG","fine-tuning","continued pre-training","pre-training from scratch"] },
+    { label: "Pricing", chain: ["On-Demand tokens (flexible)","Provisioned Throughput (fixed, guaranteed)"] },
+  ],
+  recallMetrics: [
+    ["Classification quality","accuracy / precision / recall / F1"],
+    ["Summarization quality","ROUGE"],
+    ["Translation quality","BLEU"],
+    ["Semantic similarity","BERTScore"],
+    ["Scaled subjective judgment","LLM-as-a-judge"],
+    ["Bias detection & explainability","SageMaker Clarify"],
+    ["Model documentation","SageMaker Model Cards"],
+    ["Ongoing model drift","SageMaker Model Monitor"],
+    ["Human review in workflow","Amazon A2I"],
+    ["Content safety/policy filtering","Amazon Bedrock Guardrails"],
+  ]
+};
+
+let PROGRESS = {};
+const STORAGE_KEY = "progress:" + DATA.examId;
+
+function escapeHtml(s){
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+function inlineFormat(text){
+  let t = escapeHtml(text);
+  t = t.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  return t;
+}
+function highlight(html, q){
+  if(!q) return html;
+  try{
+    const re = new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ")", "ig");
+    return html.replace(re, "<mark>$1</mark>");
+  }catch(e){ return html; }
+}
+
+let itemCounter = 0;
+function nextId(){ return "it" + (itemCounter++); }
+
+function renderWeights(){
+  const root = document.getElementById("weightBars");
+  root.innerHTML = DATA.weights.map((w,i) => `
+    <div class="weight-row" data-jump="${i}">
+      <div class="weight-row-top"><span class="name">${escapeHtml(w.name)}</span><span class="pct">${w.pct}%</span></div>
+      <div class="weight-track"><div class="weight-fill" style="width:${w.pct}%"></div></div>
+    </div>
+  `).join("");
+  root.querySelectorAll(".weight-row").forEach(row => {
+    row.addEventListener("click", () => {
+      const idx = row.getAttribute("data-jump");
+      const domainEl = document.getElementById("domain-" + idx);
+      if(domainEl){
+        document.querySelectorAll(".domain.open").forEach(d => { if(d!==domainEl) d.classList.remove("open"); });
+        domainEl.classList.add("open");
+        domainEl.scrollIntoView({behavior:"smooth", block:"start"});
+      }
+    });
+  });
+}
+
+function ringSvg(pct){
+  const r = 14, c = 2*Math.PI*r;
+  const off = c - (pct/100)*c;
+  return `<svg viewBox="0 0 34 34"><circle class="bg" cx="17" cy="17" r="${r}"></circle>
+    <circle class="fg" cx="17" cy="17" r="${r}" stroke-dasharray="${c}" stroke-dashoffset="${off}"></circle></svg>`;
+}
+
+function domainProgress(domainIdx){
+  const dom = DATA.domains[domainIdx];
+  let total=0, done=0;
+  dom.tasks.forEach(t => t.items.forEach(it => {
+    if(it.b){ total++; if(PROGRESS[it._id]) done++; }
+  }));
+  return {total, done, pct: total ? Math.round(done/total*100) : 0};
+}
+
+function overallProgress(){
+  let total=0, done=0;
+  DATA.domains.forEach((d,i) => { const p = domainProgress(i); total+=p.total; done+=p.done; });
+  return total ? Math.round(done/total*100) : 0;
+}
+
+function renderDomains(){
+  const root = document.getElementById("domainsRoot");
+  root.innerHTML = DATA.domains.map((dom, di) => {
+    const tasksHtml = dom.tasks.map((task, ti) => {
+      const itemsHtml = task.items.map(it => {
+        if(it.b){
+          it._id = it._id || nextId();
+          const checked = !!PROGRESS[it._id];
+          return `<div class="item ${checked?'checked':''}" data-id="${it._id}" data-text="${escapeHtml(it.b)}">
+            <div class="box">${checked ? '✓' : ''}</div>
+            <div class="txt">${inlineFormat(it.b)}</div>
+          </div>`;
+        }else if(it.tip){
+          return `<div class="tip" data-text="${escapeHtml(it.tip)}"><b>Exam tip:</b> ${it.tip}</div>`;
+        }else if(it.svc){
+          return it.svc.map(([n,d]) => `<div class="svc-card" data-text="${escapeHtml(n+' '+d)}">
+            <div class="name">${escapeHtml(n)}</div><div class="desc">${escapeHtml(d)}</div></div>`).join("");
+        }
+        return "";
+      }).join("");
+      return `<div class="task"><div class="task-head">${escapeHtml(task.head)}</div>${itemsHtml}</div>`;
+    }).join("");
+
+    const prog = domainProgress(di);
+    return `<div class="domain" id="domain-${di}" data-idx="${di}">
+      <div class="domain-head">
+        <div class="domain-num">${dom.num}</div>
+        <div class="domain-titles">
+          <div class="t">${escapeHtml(dom.title)}</div>
+          <div class="w">Weight ${dom.weight} · ${prog.done}/${prog.total} reviewed</div>
+        </div>
+        <div class="domain-ring">${ringSvg(prog.pct)}<div class="pct">${prog.pct}</div></div>
+        <div class="chevron">▾</div>
+      </div>
+      <div class="domain-body">${tasksHtml}</div>
+    </div>`;
+  }).join("");
+
+  root.querySelectorAll(".domain-head").forEach(head => {
+    head.addEventListener("click", () => head.parentElement.classList.toggle("open"));
+  });
+  root.querySelectorAll(".item").forEach(el => {
+    el.addEventListener("click", () => toggleItem(el.getAttribute("data-id")));
+  });
+}
+
+function toggleItem(id){
+  PROGRESS[id] = !PROGRESS[id];
+  saveProgress();
+  refreshProgressUI();
+}
+
+function refreshProgressUI(){
+  document.querySelectorAll(".item").forEach(el => {
+    const id = el.getAttribute("data-id");
+    const checked = !!PROGRESS[id];
+    el.classList.toggle("checked", checked);
+    el.querySelector(".box").innerHTML = checked ? "✓" : "";
+  });
+  DATA.domains.forEach((dom, di) => {
+    const prog = domainProgress(di);
+    const domEl = document.getElementById("domain-" + di);
+    if(!domEl) return;
+    domEl.querySelector(".w").textContent = `Weight ${dom.weight} · ${prog.done}/${prog.total} reviewed`;
+    const ringWrap = domEl.querySelector(".domain-ring");
+    ringWrap.innerHTML = ringSvg(prog.pct) + `<div class="pct">${prog.pct}</div>`;
+  });
+  const overall = overallProgress();
+  document.getElementById("overallFill").style.width = overall + "%";
+  document.getElementById("overallLabel").textContent = overall + "% reviewed";
+}
+
+function renderServices(){
+  const root = document.getElementById("servicesRoot");
+  root.innerHTML = DATA.services.map(cat => `
+    <div class="chip-cat" data-cat="${escapeHtml(cat.cat)}">
+      <div class="cat-name">${escapeHtml(cat.cat)}</div>
+      <div class="chips">${cat.items.map(s => `<span class="chip" data-text="${escapeHtml(s)}">${escapeHtml(s)}</span>`).join("")}</div>
+    </div>
+  `).join("");
+}
+
+function renderRecall(){
+  const root = document.getElementById("recallBody");
+  let html = "";
+  DATA.recall.forEach(r => {
+    html += `<div class="ladder"><b>${escapeHtml(r.label)}:</b><br>${r.chain.map(escapeHtml).join(' <span class="arrow">→</span> ')}</div>`;
+  });
+  html += `<div class="ladder"><b>Metric map</b><br>` +
+    DATA.recallMetrics.map(([k,v]) => `${escapeHtml(k)} <span class="arrow">→</span> <b>${escapeHtml(v)}</b>`).join("<br>") +
+    `</div>`;
+  root.innerHTML = html;
+}
+
+// ---------- search ----------
+function applySearch(q){
+  q = q.trim().toLowerCase();
+  const domains = document.querySelectorAll(".domain");
+  let anyMatch = false;
+
+  if(!q){
+    domains.forEach(d => {
+      d.querySelectorAll(".item, .tip, .svc-card").forEach(el => { el.classList.remove("hidden"); el.innerHTML = el.innerHTML; });
+      d.classList.remove("open");
+    });
+    // restore original text without marks
+    renderDomains();
+    document.getElementById("noResults")?.remove();
+    document.querySelectorAll(".chip").forEach(c => c.classList.remove("hidden"));
+    return;
+  }
+
+  domains.forEach(d => {
+    let domainHasMatch = false;
+    d.querySelectorAll(".item, .tip, .svc-card").forEach(el => {
+      const text = (el.getAttribute("data-text") || "").toLowerCase();
+      const match = text.includes(q);
+      el.classList.toggle("hidden", !match);
+      if(match){
+        domainHasMatch = true;
+        anyMatch = true;
+        if(el.classList.contains("item")){
+          const txt = el.querySelector(".txt");
+          txt.innerHTML = highlight(inlineFormat(el.getAttribute("data-text")), q);
+        }
+      }
+    });
+    d.classList.toggle("open", domainHasMatch);
+    d.style.display = domainHasMatch ? "" : "none";
+  });
+
+  document.querySelectorAll(".chip").forEach(c => {
+    const t = (c.getAttribute("data-text")||"").toLowerCase();
+    c.classList.toggle("hidden", !t.includes(q));
+  });
+
+  let noRes = document.getElementById("noResults");
+  if(!anyMatch){
+    if(!noRes){
+      noRes = document.createElement("div");
+      noRes.id = "noResults";
+      noRes.className = "no-results";
+      noRes.textContent = "No matches. Try a different term.";
+      document.getElementById("domainsRoot").after(noRes);
+    }
+  }else if(noRes){ noRes.remove(); }
+}
+
+async function loadProgress(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){ PROGRESS = JSON.parse(raw); }
+  }catch(e){ PROGRESS = {}; }
+}
+async function saveProgress(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(PROGRESS));
+  }catch(e){ /* non-fatal, e.g. private browsing mode */ }
+}
+
+async function init(){
+  await loadProgress();
+  renderWeights();
+  renderDomains();
+  renderServices();
+  renderRecall();
+  refreshProgressUI();
+
+  document.getElementById("searchInput").addEventListener("input", (e) => applySearch(e.target.value));
+  document.getElementById("clearBtn").addEventListener("click", () => {
+    document.getElementById("searchInput").value = "";
+    applySearch("");
+  });
+  document.getElementById("recallToggle").addEventListener("click", () => {
+    const body = document.getElementById("recallBody");
+    const open = body.classList.toggle("open");
+    document.getElementById("recallToggle").textContent = open ? "▴ Hide recall sheet" : "▾ Show last-minute recall sheet";
+  });
+}
+init();
+</script>
+</body>
+</html>

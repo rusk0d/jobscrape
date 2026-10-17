@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jobscrape</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #F4F1EC;
+    --row:       #FFFFFF;
+    --row-open:  #FEFDFB;
+    --ink:       #23201C;
+    --ink-2:     #4C4740;
+    --ink-3:     #8A837A;
+    --line:      #E4DFD6;
+    --line-2:    #EDE9E1;
+    --accent:    #C8461B;
+    --accent-bg: #FBF0EB;
+    --sel-bg:    #FDF3EC;
+    --applied:   #1F8A5C;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+  .wrap { max-width: 900px; margin: 0 auto; padding: 32px 20px 90px; }
+
+  .card {
+    background: var(--row);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px -16px rgba(0,0,0,.12);
+    overflow: hidden;
+  }
+
+  /* ---------- header ---------- */
+
+  .top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 18px 24px 0;
+  }
+
+  .brand { display: flex; align-items: baseline; gap: 12px; }
+  h1 { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -0.02em; }
+  .count { font-size: 11px; color: var(--ink-3); }
+
+  .signout {
+    font-size: 12px;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .signout:hover { text-decoration: underline; }
+
+  /* ---------- status tabs ---------- */
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 14px 24px 0;
+    margin-top: 12px;
+    border-bottom: 1px solid var(--line-2);
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .filter {
+    font-size: 13px;
+    color: var(--ink-3);
+    text-decoration: none;
+    padding: 8px 9px 11px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    display: flex;
+    gap: 6px;
+    align-items: baseline;
+    white-space: nowrap;
+  }
+  .filter:hover { color: var(--ink-2); }
+  .filter[aria-current] {
+    color: var(--ink);
+    font-weight: 600;
+    border-bottom-color: var(--ink);
+  }
+  .filter .n {
+    font-size: 11px;
+    color: var(--ink-3);
+    font-weight: 500;
+  }
+
+  /* ---------- toolbar ---------- */
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    padding: 16px 24px;
+    background: #FBFAF7;
+    border-bottom: 1px solid var(--line-2);
+  }
+
+  #q {
+    flex: 1;
+    min-width: 180px;
+    font: inherit;
+    font-size: 13px;
+    padding: 9px 13px;
+    color: var(--ink);
+    background: var(--row);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+  }
+  #q::placeholder { color: var(--ink-3); }
+  #q:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+  .minscore {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 0 12px;
+    border-left: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  .ms-label { font-size: 11px; font-weight: 500; color: var(--ink-3); letter-spacing: 0.02em; }
+  #minScore { width: 110px; accent-color: var(--accent); }
+  .ms-val { font-size: 13px; font-weight: 700; width: 20px; }
+
+  .sortgroup {
+    display: flex;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    overflow: hidden;
+  }
+  .sortbtn {
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 8px 13px;
+    color: var(--ink-2);
+    background: var(--row);
+    border: none;
+    border-left: 1px solid var(--line);
+    cursor: pointer;
+  }
+  .sortbtn:first-child { border-left: none; }
+  .sortbtn:hover { background: var(--line-2); }
+  .sortbtn[aria-pressed="true"] { background: var(--ink); color: #fff; }
+
+  #tally { margin: 13px 24px 0; font-size: 12.5px; color: var(--ink-3); min-height: 17px; }
+
+  /* ---------- bulk selection bar ---------- */
+
+  .selbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 11px 24px;
+    background: var(--ink);
+  }
+  .selbar.hidden { display: none; }
+  #selCount { font-size: 12px; font-weight: 600; color: #fff; }
+  .selbar button {
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #bulkDismiss { background: var(--accent); color: #fff; border: none; }
+  #bulkSave { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.3); font-weight: 500; }
+  #selClear { margin-left: auto; background: none; border: none; color: rgba(255,255,255,.6); font-weight: 400; }
+  #selClear:hover { color: #fff; }
+
+  /* ---------- rows ---------- */
+
+  .job {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--line-2);
+  }
+  .job:last-child { border-bottom: none; }
+  .job.is-selected { background: var(--sel-bg); }
+
+  .sel {
+    flex: none;
+    width: 26px;
+    display: flex;
+    justify-content: center;
+    padding-top: 21px;
+    cursor: pointer;
+  }
+  .sel input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .sel .box {
+    width: 15px; height: 15px;
+    border-radius: 4px;
+    border: 1.5px solid var(--line);
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: #fff;
+  }
+  .sel .box::after { content: ""; }
+  .sel input:checked + .box {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .sel input:checked + .box::after { content: "\2713"; }
+  .sel input:focus-visible + .box { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* score */
+  .score {
+    flex: none;
+    width: 70px;
+    padding: 17px 0 17px 4px;
+    border: none;
+    background: none;
+    text-align: left;
+    font: inherit;
+    cursor: default;
+  }
+  .score.clickable { cursor: pointer; }
+  .score .val {
+    display: block;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .score .bar {
+    display: block;
+    margin-top: 6px;
+    width: 42px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--line-2);
+    overflow: hidden;
+  }
+  .score .bar i { display: block; height: 100%; border-radius: 2px; }
+
+  .score.s-low  .val { color: var(--ink-3); }
+  .score.s-mid  .val { color: var(--ink); }
+  .score.s-high .val { color: var(--accent); }
+  .score.s-low  .bar i { background: var(--ink-3); }
+  .score.s-mid  .bar i { background: var(--ink); }
+  .score.s-high .bar i { background: var(--accent); }
+  .score.s-applied .val { color: var(--applied); }
+  .score.s-applied .bar i { background: var(--applied); }
+
+  .job.is-rejected .score .val,
+  .job.is-dismissed .score .val { color: var(--ink-3); }
+
+  .main { flex: 1; min-width: 0; padding: 16px 24px 16px 2px; }
+
+  .headrow {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+  }
+
+  .title {
+    margin: 0;
+    font-size: 15.5px;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+  .title a { color: var(--ink); text-decoration: none; }
+  .title a:hover { color: var(--accent); }
+  .job.is-rejected .title a,
+  .job.is-dismissed .title a { color: var(--ink-3); }
+
+  .meta {
+    margin-top: 5px;
+    font-size: 12.5px;
+    color: var(--ink-2);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+  }
+  .meta .who { font-weight: 600; color: var(--ink); }
+  .meta .pay { color: var(--accent); font-weight: 600; }
+  .meta .age { font-family: "JetBrains Mono", monospace; font-size: 11.5px; }
+  .meta .from { color: var(--ink-3); }
+
+  .job.is-stale .title a::after {
+    content: "expired?";
+    margin-left: 8px;
+    font-size: 11.5px;
+    font-weight: 400;
+    color: var(--ink-3);
+  }
+
+  select {
+    flex: none;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 7px 9px;
+    color: var(--ink-2);
+    background: var(--row);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  select:hover { border-color: var(--ink-3); }
+
+  /* ---------- why / description panel ---------- */
+
+  .why { margin-top: 10px; }
+  .why > summary { list-style: none; cursor: pointer; }
+  .why > summary::-webkit-details-marker { display: none; }
+  .whytoggle {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--accent);
+  }
+  .why > summary:hover .whytoggle { text-decoration: underline; }
+  .why[open] > summary { margin-bottom: 12px; }
+  .why[open] .whytoggle::before { content: "Hide · "; }
+
+  .whybody {
+    border: 1px solid var(--line-2);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .reasonbox {
+    padding: 13px 15px;
+    background: var(--accent-bg);
+    border-bottom: 1px solid #F0DCD0;
+  }
+  .reasonlabel {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .reasontext { font-size: 13px; line-height: 1.6; color: var(--ink); }
+
+  .full {
+    padding: 13px 15px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--ink-2);
+    background: #fff;
+    overflow-wrap: anywhere;
+  }
+  .full p { margin: 4px 0; }
+  .full .sub { margin-top: 11px; font-weight: 600; color: var(--ink); }
+
+  /* triaged rows recede */
+  .job.is-rejected, .job.is-dismissed { background: transparent; }
+  .job.is-rejected .why,
+  .job.is-dismissed .why { display: none; }
+
+  .hidden { display: none; }
+
+  .empty {
+    padding: 56px 24px;
+    text-align: center;
+    color: var(--ink-3);
+    font-size: 13.5px;
+  }
+
+  a:focus-visible, button:focus-visible, select:focus-visible,
+  summary:focus-visible, [tabindex]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ---------- mobile ---------- */
+
+  @media (max-width: 620px) {
+    .wrap { padding: 20px 12px 70px; }
+    .top { padding: 16px 16px 0; }
+    h1 { font-size: 17px; }
+    .filters { padding: 12px 16px 0; }
+    .toolbar { padding: 12px 16px; flex-wrap: wrap; }
+    #q { flex-basis: 100%; }
+    .minscore { border-left: none; padding: 0; flex-basis: 100%; }
+    .sortgroup { flex-basis: 100%; }
+    .sortbtn { flex: 1; text-align: center; }
+    #tally { margin-left: 16px; margin-right: 16px; }
+    .selbar { padding: 10px 16px; flex-wrap: wrap; }
+    .score { width: 54px; padding: 15px 0 15px 4px; }
+    .score .val { font-size: 19px; }
+    .main { padding: 14px 16px 14px 2px; }
+    .title { font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="card">
+
+    <div class="top">
+      <div class="brand">
+        <h1>jobscrape</h1>
+        <span class="count mono">{{ counts['all'] }} tracked{% if last_scrape %} · last scrape {{ last_scrape }}{% endif %}</span>
+      </div>
+      <a class="signout" href="/logout">Sign out</a>
+    </div>
+
+    <nav class="filters">
+      <a class="filter" href="/?status=all" {% if active == 'all' %}aria-current="page"{% endif %}>All<span class="n mono">{{ counts['all'] }}</span></a>
+      {% for s in statuses %}
+      <a class="filter" href="/?status={{ s }}" {% if active == s %}aria-current="page"{% endif %}>{{ s|capitalize }}<span class="n mono">{{ counts[s] }}</span></a>
+      {% endfor %}
+    </nav>
+
+    <div class="toolbar">
+      <input id="q" type="search" placeholder="Search title, employer, location" autocomplete="off" aria-label="Search">
+      <div class="minscore">
+        <span class="ms-label mono">MIN SCORE</span>
+        <input id="minScore" type="range" min="0" max="95" step="5" value="0" aria-label="Minimum score">
+        <span id="minScoreVal" class="ms-val mono">0</span>
+      </div>
+      <div class="sortgroup">
+        <button class="sortbtn" data-sort="score" aria-pressed="true">Match</button>
+        <button class="sortbtn" data-sort="date" aria-pressed="false">Newest</button>
+        <button class="sortbtn" data-sort="employer" aria-pressed="false">Employer</button>
+      </div>
+    </div>
+    <p id="tally"></p>
+
+    <div id="selbar" class="selbar hidden">
+      <span id="selCount">0 selected</span>
+      <button type="button" id="bulkDismiss">Dismiss all</button>
+      <button type="button" id="bulkSave">Save all</button>
+      <button type="button" id="selClear">Clear</button>
+    </div>
+
+    <div class="list">
+    {% for job in jobs %}
+    <article class="job is-{{ job.status }}{% if job.stale %} is-stale{% endif %}"
+             data-id="{{ job.id }}"
+             data-score="{{ job.score }}"
+             data-date="{{ job.first_seen }}"
+             data-employer="{{ (job.employer or '')|lower }}"
+             data-text="{{ (job.title ~ ' ' ~ (job.employer or '') ~ ' ' ~ (job.location or '') ~ ' ' ~ job.source)|lower }}">
+
+      <label class="sel">
+        <input type="checkbox" class="selbox" data-id="{{ job.id }}" aria-label="Select {{ job.title }}">
+        <span class="box"></span>
+      </label>
+
+      <button type="button" class="score s-{{ job.band }}{% if job.status == 'applied' %} s-applied{% endif %}{% if job.reason or job.lines %} clickable{% endif %}"{% if job.reason or job.lines %} data-target="why-{{ job.id }}" aria-expanded="false"{% endif %}>
+        <span class="val mono">{{ job.score }}</span>
+        <span class="bar"><i style="width: {{ job.score }}%"></i></span>
+      </button>
+
+      <div class="main">
+        <div class="headrow">
+          <h2 class="title"><a href="{{ job.link }}" target="_blank" rel="noopener">{{ job.title }}</a></h2>
+          <form method="post" action="/status">
+            <input type="hidden" name="id" value="{{ job.id }}">
+            <select name="status" onchange="this.form.submit()" aria-label="Status">
+              {% for s in statuses %}
+              <option value="{{ s }}" {% if job.status == s %}selected{% endif %}>{{ s|capitalize }}</option>
+              {% endfor %}
+            </select>
+          </form>
+        </div>
+
+        <div class="meta">
+          {% if job.employer %}<span class="who">{{ job.employer }}</span>{% endif %}
+          {% if job.location %}<span>{{ job.location }}</span>{% endif %}
+          {% if job.age %}<span class="age">{{ job.age }}</span>{% endif %}
+          {% if job.salary %}<span class="pay">{{ job.salary }}</span>{% endif %}
+          <span class="from">{{ job.source }}</span>
+        </div>
+
+        {% if job.reason or job.lines %}
+        <details class="why" id="why-{{ job.id }}">
+          <summary><span class="whytoggle">Why {{ job.score }}?{% if job.lines %} · read description{% endif %}</span></summary>
+          <div class="whybody">
+            {% if job.reason %}
+            <div class="reasonbox">
+              <div class="reasonlabel">WHY {{ job.score }}</div>
+              <div class="reasontext">{{ job.reason }}</div>
+            </div>
+            {% endif %}
+            {% if job.lines %}
+            <div class="full">
+              {% for l in job.lines %}
+                {% if l.heading %}<p class="sub">{{ l.text }}</p>{% else %}<p>{{ l.text }}</p>{% endif %}
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+        </details>
+        {% endif %}
+      </div>
+
+    </article>
+    {% else %}
+    <p class="empty">Nothing here yet.</p>
+    {% endfor %}
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  var SAVE_STATUS = 'interested';
+  var DISMISS_STATUS = 'dismissed';
+
+  var list      = document.querySelector('.list');
+  var jobs      = Array.prototype.slice.call(document.querySelectorAll('.job'));
+  var q         = document.getElementById('q');
+  var tally     = document.getElementById('tally');
+  var btns      = Array.prototype.slice.call(document.querySelectorAll('.sortbtn'));
+  var minScore  = document.getElementById('minScore');
+  var minScoreVal = document.getElementById('minScoreVal');
+  var selbar    = document.getElementById('selbar');
+  var selCount  = document.getElementById('selCount');
+  var bulkDismiss = document.getElementById('bulkDismiss');
+  var bulkSave  = document.getElementById('bulkSave');
+  var selClear  = document.getElementById('selClear');
+
+  if (!jobs.length) return;
+
+  var keys = {
+    score:    function (j) { return -Number(j.dataset.score || 0); },
+    date:     function (j) { return j.dataset.date || ''; },
+    employer: function (j) { return j.dataset.employer || ''; }
+  };
+  var dir = { score: 1, date: -1, employer: 1 };
+
+  function apply() {
+    var term = q.value.trim().toLowerCase();
+    var min = Number(minScore.value);
+    var shown = 0;
+    jobs.forEach(function (j) {
+      var hitText = !term || (j.dataset.text || '').indexOf(term) !== -1;
+      var hitScore = Number(j.dataset.score || 0) >= min;
+      var hit = hitText && hitScore;
+      j.classList.toggle('hidden', !hit);
+      if (hit) shown++;
+    });
+    var parts = [];
+    if (term) parts.push(shown + ' of ' + jobs.length + ' match "' + q.value.trim() + '"');
+    if (min > 0) parts.push((jobs.length - shown) + ' below min score ' + min);
+    tally.textContent = parts.join(' · ');
+  }
+
+  function sortBy(mode) {
+    var key = keys[mode], d = dir[mode];
+    jobs.slice().sort(function (a, b) {
+      var ka = key(a), kb = key(b);
+      if (ka < kb) return -1 * d;
+      if (ka > kb) return  1 * d;
+      return 0;
+    }).forEach(function (j) { list.appendChild(j); });
+    btns.forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.sort === mode));
+    });
+  }
+
+  q.addEventListener('input', apply);
+  minScore.addEventListener('input', function () {
+    minScoreVal.textContent = minScore.value;
+    apply();
+  });
+  btns.forEach(function (b) {
+    b.addEventListener('click', function () { sortBy(b.dataset.sort); });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === '/' && document.activeElement !== q) { e.preventDefault(); q.focus(); }
+    if (e.key === 'Escape' && document.activeElement === q) { q.value = ''; apply(); q.blur(); }
+  });
+
+  // score click expands the adjacent "why" panel
+  document.querySelectorAll('.score[data-target]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var d = document.getElementById(btn.dataset.target);
+      if (!d) return;
+      d.open = !d.open;
+      btn.setAttribute('aria-expanded', String(d.open));
+    });
+  });
+  document.querySelectorAll('.why').forEach(function (d) {
+    d.addEventListener('toggle', function () {
+      var btn = document.querySelector('.score[data-target="' + d.id + '"]');
+      if (btn) btn.setAttribute('aria-expanded', String(d.open));
+    });
+  });
+
+  // batch select + bulk status change
+  var selected = {};
+
+  function refreshSelbar() {
+    var ids = Object.keys(selected).filter(function (id) { return selected[id]; });
+    selbar.classList.toggle('hidden', ids.length === 0);
+    selCount.textContent = ids.length + ' selected';
+  }
+
+  document.querySelectorAll('.selbox').forEach(function (box) {
+    box.addEventListener('change', function () {
+      var id = box.dataset.id;
+      selected[id] = box.checked;
+      var row = document.querySelector('.job[data-id="' + id + '"]');
+      if (row) row.classList.toggle('is-selected', box.checked);
+      refreshSelbar();
+    });
+  });
+
+  function clearSelection() {
+    selected = {};
+    document.querySelectorAll('.selbox').forEach(function (box) { box.checked = false; });
+    document.querySelectorAll('.job.is-selected').forEach(function (row) { row.classList.remove('is-selected'); });
+    refreshSelbar();
+  }
+
+  function bulkSetStatus(status) {
+    var ids = Object.keys(selected).filter(function (id) { return selected[id]; });
+    if (!ids.length) return;
+    Promise.all(ids.map(function (id) {
+      return fetch('/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'id=' + encodeURIComponent(id) + '&status=' + encodeURIComponent(status)
+      });
+    })).then(function () {
+      window.location.reload();
+    });
+  }
+
+  bulkDismiss.addEventListener('click', function () { bulkSetStatus(DISMISS_STATUS); });
+  bulkSave.addEventListener('click', function () { bulkSetStatus(SAVE_STATUS); });
+  selClear.addEventListener('click', clearSelection);
+})();
+</script>
+</body>
+</html>
+
