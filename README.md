@@ -2,6 +2,11 @@
 
 A Python-based job scraping and matching system that aggregates job postings from multiple Hungarian job boards and uses AI to match them against user profiles.
 
+<img width="1600" height="1000" alt="screenshot-rocks (2)" src="https://github.com/user-attachments/assets/204bc9fa-eb36-4620-837b-895a2b543be1" />
+
+
+
+
 ## Features
 
 - **Multi-source job aggregation**: Fetches jobs from:
@@ -31,7 +36,7 @@ About fifteen Hungarian job sources were evaluated. Four are used, chosen where 
 | randstad.hu | Jobs sitemap | `changefreq: hourly`; title and location from URL slug |
 | SmartRecruiters | Public JSON API | Found via public careers page API endpoints |
 
-**Excluded sources:** cvonline, jobline, hvg, dreamjo.bs (no feed, client-rendered); jooble, careerjet, indeed (search paths disallowed or scraping prohibited by ToS); hays, manpower (job search paths explicitly disallowed).
+**Excluded sources:** cvonline, jobline, dreamjo.bs (no feed, client-rendered); jooble, careerjet, indeed (search paths disallowed or scraping prohibited by ToS); hays, manpower (job search paths explicitly disallowed).
 
 **Pattern:** Job boards publish feeds because they want traffic. Aggregators and recruitment agencies block access, because job listings and candidate flow are their product.
 
