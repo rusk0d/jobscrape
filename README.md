@@ -20,6 +20,21 @@ A Python-based job scraping and matching system that aggregates job postings fro
   
 - **Database persistence**: DynamoDB for job storage and user tracking
 
+## Source Selection
+
+About fifteen Hungarian job sources were evaluated. Four are used, chosen where the site publishes machine-readable data and permits automated access:
+
+| Source | Access | Notes |
+|--------|--------|-------|
+| profession.hu | RSS | Allows `/allasok?rss$` in robots.txt; search-filtered feeds |
+| nofluffjobs.com | RSS + JSON-LD | Whole board; filtered to Budapest |
+| randstad.hu | Jobs sitemap | `changefreq: hourly`; title and location from URL slug |
+| SmartRecruiters | Public JSON API | Found via public careers page API endpoints |
+
+**Excluded sources:** cvonline, jobline, hvg, dreamjo.bs (no feed, client-rendered); jooble, careerjet, indeed (search paths disallowed or scraping prohibited by ToS); hays, manpower (job search paths explicitly disallowed).
+
+**Pattern:** Job boards publish feeds because they want traffic. Aggregators and recruitment agencies block access, because job listings and candidate flow are their product.
+
 ## Setup
 
 ### Prerequisites
@@ -163,12 +178,15 @@ add_job.py
 - [ ] Implement job trending and market analysis
 - [ ] Support other languages beyond Hungarian
 
-## Contributing
+## Development
 
-Contributions welcome! Please note:
-- Never commit `.env`, `user.py`, or `profile.txt`
-- Use `.env.example` and `user.py.example` for templates
-- Test with real AWS resources (no mocks for database integration)
+This is a personal tool for job matching. The codebase is available for reference, learning, or adaptation to other job markets.
+
+If you're building something similar:
+- See [CLAUDE.md](CLAUDE.md) for code standards and architecture decisions
+- Never commit `.env`, `user.py`, or `profile.txt`—use `.env.example` and `user.py.example` as templates
+- Test with real AWS resources, not mocks (see the code review issues for details)
+- Check [GitHub issues](https://github.com/rusk0d/jobscrape/issues) for known limitations and performance improvements
 
 ## License
 
